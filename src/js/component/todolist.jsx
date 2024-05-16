@@ -1,9 +1,45 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
 
 const Todolist = () => {
     const [inputValue, setInputValue] = useState("");
     const [todos, setTodos] = useState([]);
 
+    useEffect(() => {
+        loadTodo();
+    }, []);
+
+    function loadTodo() {
+        fetch('https://playground.4geeks.com/todo/users/llitabb')
+        .then(resp => resp.json())
+        .then(data => setTodos(data.todos))
+        .catch(error => console.log(error));
+    }
+
+    const addTask = (e) => {
+        if (e.key === "Enter" && inputValue.trim != '') {  
+          fetch('https://playground.4geeks.com/todo/todos/llitabb', {
+            method: 'POST',
+            body: JSON.stringify({label: inputValue}),
+            headers: { "Content-Type": "application/json" }
+          })
+            .then(() => {
+              loadTodo()
+              setInputValue('')
+            })
+            .catch(error => console.log(error));
+        }
+      }
+    
+      const deleteTask = taskId => {
+        fetch(`https://playground.4geeks.com/todo/todos/${taskId}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        })
+          .then(() => loadTodo())
+          .catch(error => console.error(error));
+      };
+    
     function todoListItem(tasks) {
         let message;
         if (tasks.length === 0) {
@@ -27,27 +63,23 @@ const Todolist = () => {
                                 type="text"
                                 onChange={(e) => setInputValue(e.target.value)}
                                 value={inputValue}
-                                onKeyUp={(e) => {
-                                    if (e.key === "Enter") {
-                                        setTodos(todos.concat(inputValue));
-                                        setInputValue("");
-                                    }
-                                }}
+                                onKeyUp={addTask}
                                 placeholder="What do you need to remember to do?"
                             />
                         </li>
                         {todos.map((item, index) => (
                             <li key={index} className="d-flex align-items-center">
-                                <div>{item}</div>
+                                <div>{item.label}</div>
                                 <div>
                                     <i
                                         className="bi bi-trash3-fill btn"
-                                        onClick={() => setTodos(todos.filter((t, currentIndex) => index !== currentIndex))}
+                                        onClick={() => deleteTask(item.id)}
                                     ></i>
                                 </div>
                             </li>
                         ))}
                     </ul>
+                    
                     <div>{todoListItem(todos)}</div>
                 </div>
             </div>
